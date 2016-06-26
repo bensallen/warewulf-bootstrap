@@ -1,0 +1,3 @@
+- [ ] Openrc service to parse /proc/cmdline to populate:
+    - [ ] /etc/conf.d/network
+
