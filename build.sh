@@ -37,7 +37,8 @@ cd "${BUILDROOT}/musl-${MUSL_VERS}"
 make -j2
 
 make DESTDIR="${INSTALLROOT}" install
-LDSO=$(make -f Makefile --eval "$(echo -e 'print-ldso:\n\t@echo $$(basename $(LDSO_PATHNAME))')" print-ldso)
+echo -e 'print-ldso:\n\t@echo $$(basename $(LDSO_PATHNAME))' >> Makefile
+LDSO=$(make -f Makefile print-ldso)
 mv -f "${INSTALLROOT}/usr/lib/libc.so" "${INSTALLROOT}/lib/${LDSO}"
 ln -sf "../../lib/${LDSO}" "${INSTALLROOT}/usr/lib/libc.so"
 mkdir -p "${INSTALLROOT}/usr/bin"
