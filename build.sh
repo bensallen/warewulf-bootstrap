@@ -139,3 +139,6 @@ console::respawn:/sbin/getty 38400 /dev/console
 # Stuff to do before rebooting
 ::shutdown:/sbin/openrc shutdown
 EOF
+
+# Create CPIO initramfs of installroot
+(cd $INSTALLROOT; find . | bsdcpio -o -z --format pax > $BASE/initramfs.gz)
