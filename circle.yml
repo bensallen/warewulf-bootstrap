@@ -1,0 +1,10 @@
+general:
+  artifacts:
+    - stdout.log
+    - initramfs.gz
+dependencies:
+  pre:
+    - sudo apt-get update; sudo apt-get -y install bsdcpio
+test:
+  override:
+    - ./build.sh > stdout.log
