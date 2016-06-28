@@ -1,4 +1,0 @@
-compiler: gcc
-language: c
-install: bsdcpio make
-script: ./build.sh
