@@ -13,27 +13,34 @@ mkdir -p $BASE/initramfs
 mkdir -p $BASE/initramfs/3rd_party/MIT
 mkdir -p $BASE/initramfs/3rd_party/GPL
 
-INSTALLROOT="${BASE}/initramfs/.install"
+INSTALLROOT="${BASE}/initramfs/_install"
+rm -rf "${INSTALLROOT}"
 mkdir -p "${INSTALLROOT}"
-BUILDROOT="${BASE}/initramfs/.build"
+BUILDROOT="${BASE}/initramfs/_build"
+rm -rf "${BUILDROOT}"
 mkdir -p "${BUILDROOT}"
+SRCROOT="${BASE}/initramfs/_src"
+rm -rf "${SRCROOT}"
+mkdir -p "${SRCROOT}"
+
 KHDR_BASE=/usr
 
 ### MUSL-C ###
-cd "${BASE}/initramfs/3rd_party/MIT"
-if [ ! -e "${BASE}/initramfs/3rd_party/MIT/musl-${MUSL_VERS}.tar.gz" ]; then
+mkdir -p "${BASE}/initramfs/3rd_party/MIT/musl"
+cd "${BASE}/initramfs/3rd_party/MIT/musl"
+if [ ! -e "${BASE}/initramfs/3rd_party/MIT/musl/musl-${MUSL_VERS}.tar.gz" ]; then
     curl -O https://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz
 fi
 
-tar -C "${BUILDROOT}" -xf musl-${MUSL_VERS}.tar.gz
-cd "${BUILDROOT}/musl-${MUSL_VERS}"
+tar -C "${SRCROOT}" -xf musl-${MUSL_VERS}.tar.gz
+cd "${SRCROOT}/musl-${MUSL_VERS}"
 ./configure \
     --disable-wrapper \
     --prefix=/usr \
     --sysconfdir=/etc \
     --localstatedir=/var \
     --syslibdir=/lib \
-    --includedir="/../.build/include"
+    --includedir="/../_build/include"
 make -j2
 
 make DESTDIR="${INSTALLROOT}" install
@@ -46,7 +53,7 @@ ln -sf "../../lib/${LDSO}" "${INSTALLROOT}/usr/bin/ldd"
 
 mkdir -p "${BUILDROOT}/bin" "${BUILDROOT}/etc"
 
-sh "${BUILDROOT}/musl-${MUSL_VERS}/tools/musl-gcc.specs.sh" "${BUILDROOT}/include" "${INSTALLROOT}/usr/lib" "/lib/${LDSO}" > "${BUILDROOT}/etc/musl-gcc.specs"
+sh "${SRCROOT}/musl-${MUSL_VERS}/tools/musl-gcc.specs.sh" "${BUILDROOT}/include" "${INSTALLROOT}/usr/lib" "/lib/${LDSO}" > "${BUILDROOT}/etc/musl-gcc.specs"
 
 cat <<EOF > "${BUILDROOT}/bin/musl-gcc"
 #!/bin/sh
@@ -64,6 +71,7 @@ ln -s `which ar` musl-ar
 ln -s `which strip` musl-strip
 
 # TODO: Using linux-headers from the buildhost for now
+mkdir -p "${BUILDROOT}/include"
 cd "${BUILDROOT}/include"
 ln -s "${KHDR_BASE}/include/linux" linux
 ln -s "${KHDR_BASE}/include/mtd" mtd
@@ -76,13 +84,14 @@ fi
 ln -s "${KHDR_BASE}/include/asm-generic" asm-generic
 
 ### Busybox (static) ###
-cd "${BASE}/initramfs/3rd_party/GPL"
-if [ ! -e "${BASE}/initramfs/3rd_party/GPL/busybox-${BUSYBOX_VERS}.tar.bz2" ]; then
+mkdir -p "${BASE}/initramfs/3rd_party/GPL/busybox"
+cd "${BASE}/initramfs/3rd_party/GPL/busybox"
+if [ ! -e "${BASE}/initramfs/3rd_party/GPL/busybox/busybox-${BUSYBOX_VERS}.tar.bz2" ]; then
     curl -O https://www.busybox.net/downloads/busybox-${BUSYBOX_VERS}.tar.bz2
 fi
 
-tar -C "${BUILDROOT}" -xf busybox-${BUSYBOX_VERS}.tar.bz2
-cd "${BUILDROOT}/busybox-${BUSYBOX_VERS}"
+tar -C "${SRCROOT}" -xf busybox-${BUSYBOX_VERS}.tar.bz2
+cd "${SRCROOT}/busybox-${BUSYBOX_VERS}"
 cp "${BASE}/busybox.config" .config
 sed -i -e "s/CONFIG_EXTRA_COMPAT=y/CONFIG_EXTRA_COMPAT=n/" \
        -e "s/.*CONFIG_CROSS_COMPILER_PREFIX.*/CONFIG_CROSS_COMPILER_PREFIX=\"musl-\"/" \
@@ -96,9 +105,12 @@ sed -i -e "s/CONFIG_EXTRA_COMPAT=y/CONFIG_EXTRA_COMPAT=n/" \
 make V=1 -j2
 make install
 
+(cd ${INSTALLROOT} && ln -s bin/busybox init)
+
 ### OpenRC ###
-cd "${BASE}/initramfs/3rd_party/MIT"
-if [ ! -e "${BASE}/initramfs/3rd_party/MIT/openrc-${OPENRC_VERS}.tar.gz" ]; then
+mkdir -p "${BASE}/initramfs/3rd_party/MIT/openrc"
+cd "${BASE}/initramfs/3rd_party/MIT/openrc"
+if [ ! -e "${BASE}/initramfs/3rd_party/MIT/openrc/openrc-${OPENRC_VERS}.tar.gz" ]; then
     curl -L -o openrc-${OPENRC_VERS}.tar.gz https://github.com/OpenRC/openrc/archive/${OPENRC_VERS}.tar.gz
 fi
 
@@ -140,5 +152,8 @@ console::respawn:/sbin/getty 38400 /dev/console
 ::shutdown:/sbin/openrc shutdown
 EOF
 
+mkdir -p ${INSTALLROOT}/proc ${INSTALLROOT}/run ${INSTALLROOT}/dev ${INSTALLROOT}/tmp ${INSTALLROOT}/lib/modules
+touch ${INSTALLROOT}/etc/fstab ${INSTALLROOT}/etc/sysctl.conf
+
 # Create CPIO initramfs of installroot
-(cd $INSTALLROOT; find . | bsdcpio -o -z --format pax > $BASE/initramfs.gz)
+(cd $INSTALLROOT; find . | bsdcpio -o -z --format newc > $BASE/initramfs.gz)
