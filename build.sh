@@ -4,9 +4,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-MUSL_VERS=1.1.14
-BUSYBOX_VERS=1.24.2
-OPENRC_VERS=0.21
+MUSL_VERS=1.1.15
+BUSYBOX_VERS=1.25.0
+OPENRC_VERS=0.21.2
 
 BASE=$(dirname $(readlink -f $0))
 mkdir -p $BASE/initramfs
@@ -114,8 +114,13 @@ if [ ! -e "${BASE}/initramfs/3rd_party/MIT/openrc/openrc-${OPENRC_VERS}.tar.gz" 
     curl -L -o openrc-${OPENRC_VERS}.tar.gz https://github.com/OpenRC/openrc/archive/${OPENRC_VERS}.tar.gz
 fi
 
-tar -C "${BUILDROOT}" -xf openrc-${OPENRC_VERS}.tar.gz
-cd "${BUILDROOT}/openrc-${OPENRC_VERS}"
+tar -C "${SRCROOT}" -xf openrc-${OPENRC_VERS}.tar.gz
+cd "${SRCROOT}/openrc-${OPENRC_VERS}"
+
+for i in ${BASE}/initramfs/3rd_party/MIT/openrc/patches/*.patch; do
+    patch -p1 -i $i || return 1
+done
+sed -i -e '/^sed/d' pkgconfig/Makefile
 
 make install \
     LIBNAME=lib \
