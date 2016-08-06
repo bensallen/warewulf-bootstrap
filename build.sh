@@ -160,5 +160,10 @@ EOF
 mkdir -p ${INSTALLROOT}/proc ${INSTALLROOT}/run ${INSTALLROOT}/dev ${INSTALLROOT}/tmp ${INSTALLROOT}/lib/modules
 touch ${INSTALLROOT}/etc/fstab ${INSTALLROOT}/etc/sysctl.conf
 
+# Create root user
+echo 'root:x:0:0:root:/:/bin/sh' > ${INSTALLROOT}/etc/passwd
+echo 'root::16793:0:99999:7:::' > ${INSTALLROOT}/etc/shadow
+echo 'root:x:0:' > ${INSTALLROOT}/etc/group
+
 # Create CPIO initramfs of installroot
-(cd $INSTALLROOT; find . | bsdcpio -o -z --format newc > $BASE/initramfs.gz)
+(cd $INSTALLROOT; find . | bsdcpio -R 0:0 -o -z --format newc > $BASE/initramfs.gz)
