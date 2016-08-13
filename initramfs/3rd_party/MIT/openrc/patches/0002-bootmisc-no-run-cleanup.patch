@@ -1,0 +1,48 @@
+--- a/init.d/bootmisc.in	2016-07-31 12:05:41.000000000 -0700
++++ b/init.d/bootmisc.in	2016-08-12 20:10:00.229680047 -0700
+@@ -122,37 +122,6 @@
+  	fi
+ }
+ 
+-clean_run()
+-{
+-	[ "$RC_SYS" = VSERVER -o "$RC_SYS" = LXC ] && return 0
+-	local dir
+-	# If / is still read-only due to a problem, this will fail!
+-	if ! checkpath -W /; then
+-		ewarn "/ is not writable; unable to clean up underlying /run"
+-		return 1
+-	fi
+-	if ! checkpath -W /tmp; then
+-		ewarn "/tmp is not writable; unable to clean up underlying /run"
+-		return 1
+-	fi
+-	# Now we know that we can modify /tmp and /
+-	# if mktemp -d fails, it returns an EMPTY string
+-	# STDERR: mktemp: failed to create directory via template ‘/tmp/tmp.XXXXXXXXXX’: Read-only file system
+-	# STDOUT: ''
+-	rc=0
+-	dir=$(mktemp -d)
+-	if [ -n "$dir" -a -d $dir -a -w $dir ]; then
+-		mount --bind / $dir && rm -rf $dir/run/* || rc=1
+-		umount $dir && rmdir $dir
+-	else
+-		rc=1
+-	fi
+-	if [ $rc -ne 0 ]; then
+-		ewarn "Could not clean up underlying /run on /"
+-		return 1
+-	fi
+-}
+-
+ start()
+ {
+ 	# Remove any added console dirs
+@@ -183,7 +152,6 @@
+ 	if [ "$RC_UNAME" = Linux -a -d /run ]; then
+ 		migrate_to_run	/var/lock /run/lock
+ 		migrate_to_run	/var/run /run
+-		clean_run
+ 	fi
+ 
+ 	if checkpath -W /var/run; then
