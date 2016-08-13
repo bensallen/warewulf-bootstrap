@@ -4,9 +4,11 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+NUM_CPU=$(nproc)
+
 MUSL_VERS=1.1.15
 BUSYBOX_VERS=1.25.0
-OPENRC_VERS=0.21.2
+OPENRC_VERS=0.21.3
 
 BASE=$(dirname $(readlink -f $0))
 mkdir -p $BASE/initramfs
@@ -41,7 +43,7 @@ cd "${SRCROOT}/musl-${MUSL_VERS}"
     --localstatedir=/var \
     --syslibdir=/lib \
     --includedir="/../_build/include"
-make -j2
+make -j${NUM_CPU}
 
 make DESTDIR="${INSTALLROOT}" install
 echo -e 'print-ldso:\n\t@echo $$(basename $(LDSO_PATHNAME))' >> Makefile
@@ -102,7 +104,7 @@ sed -i -e "s/CONFIG_EXTRA_COMPAT=y/CONFIG_EXTRA_COMPAT=n/" \
        -e "s/.*CONFIG_INSTALL_APPLET_SYMLINKS.*/CONFIG_INSTALL_APPLET_SYMLINKS=y/" \
        .config
 
-make V=1 -j2
+make V=1 -j${NUM_CPU}
 make install
 
 (cd ${INSTALLROOT} && ln -s bin/busybox init)
@@ -122,7 +124,7 @@ for i in ${BASE}/initramfs/3rd_party/MIT/openrc/patches/*.patch; do
 done
 sed -i -e '/^sed/d' pkgconfig/Makefile
 
-make install \
+make -j${NUM_CPU} install \
     LIBNAME=lib \
     DESTDIR="${INSTALLROOT}" \
     MKNET=yes \
@@ -162,12 +164,15 @@ mkdir -p ${INSTALLROOT}/proc ${INSTALLROOT}/run ${INSTALLROOT}/dev ${INSTALLROOT
 touch ${INSTALLROOT}/etc/fstab ${INSTALLROOT}/etc/sysctl.conf
 
 # Cleanup
-find ${INSTALLROOT}/usr/lib -name "*.a" -delete
+find "${INSTALLROOT}/usr/lib" -name "*.a" -delete
+
+# For now disable keymap
+rm -f "${INSTALLROOT}/etc/runlevels/boot/keymaps"
 
 # Create root user
-echo 'root:x:0:0:root:/:/bin/sh' > ${INSTALLROOT}/etc/passwd
-echo 'root::16793:0:99999:7:::' > ${INSTALLROOT}/etc/shadow
-echo 'root:x:0:' > ${INSTALLROOT}/etc/group
+echo 'root:x:0:0:root:/:/bin/sh' > "${INSTALLROOT}/etc/passwd"
+echo 'root::16793:0:99999:7:::' > "${INSTALLROOT}/etc/shadow"
+echo 'root:x:0:' > "${INSTALLROOT}/etc/group"
 
 # Create CPIO initramfs of installroot
-(cd $INSTALLROOT; find . | bsdcpio -R 0:0 -o -z --format newc > $BASE/initramfs.gz)
+(cd "$INSTALLROOT"; find . | bsdcpio -R 0:0 -o -z --format newc > "$BASE/initramfs.gz")
