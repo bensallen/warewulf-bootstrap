@@ -1,0 +1,11 @@
+--- a/sh/init.sh.Linux.in	2016-08-12 20:21:40.241680047 -0700
++++ b/sh/init.sh.Linux.in	2016-08-12 20:21:59.912680047 -0700
+@@ -73,7 +73,7 @@
+ fi
+ 
+ checkpath -d $RC_SVCDIR
+-checkpath -d -m 0775 -o root:uucp /run/lock
++checkpath -d -m 0755 -o root:root /run/lock
+ 
+ # Try to mount xenfs as early as possible, otherwise rc_sys() will always
+ # return RC_SYS_XENU and will think that we are in a domU while it's not.
