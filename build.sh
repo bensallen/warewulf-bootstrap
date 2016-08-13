@@ -4,32 +4,40 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-NUM_CPU=$(nproc)
-
 MUSL_VERS=1.1.15
 BUSYBOX_VERS=1.25.0
 OPENRC_VERS=0.21.3
 
-BASE=$(dirname $(readlink -f $0))
-mkdir -p $BASE/initramfs
-mkdir -p $BASE/initramfs/3rd_party/MIT
-mkdir -p $BASE/initramfs/3rd_party/GPL
+NUM_CPU=$(nproc)
 
+BASE=$(dirname $(readlink -f $0))
+mkdir -p "$BASE/initramfs"
+mkdir -p "$BASE/initramfs/3rd_party/MIT"
+mkdir -p "$BASE/initramfs/3rd_party/GPL"
+
+# Temp directory for creating the initramfs
 INSTALLROOT="${BASE}/initramfs/_install"
 rm -rf "${INSTALLROOT}"
 mkdir -p "${INSTALLROOT}"
+
+# Temp directory for files needed only for the build process
 BUILDROOT="${BASE}/initramfs/_build"
 rm -rf "${BUILDROOT}"
 mkdir -p "${BUILDROOT}"
+
+# Temp directory for source
 SRCROOT="${BASE}/initramfs/_src"
 rm -rf "${SRCROOT}"
 mkdir -p "${SRCROOT}"
 
-KHDR_BASE=/usr
+# Where to find linux-headers
+KERN_HDR=/usr/include
 
-### MUSL-C ###
+### Build MUSL-C ###
+
 mkdir -p "${BASE}/initramfs/3rd_party/MIT/musl"
 cd "${BASE}/initramfs/3rd_party/MIT/musl"
+
 if [ ! -e "${BASE}/initramfs/3rd_party/MIT/musl/musl-${MUSL_VERS}.tar.gz" ]; then
     curl -O https://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz
 fi
@@ -43,20 +51,26 @@ cd "${SRCROOT}/musl-${MUSL_VERS}"
     --localstatedir=/var \
     --syslibdir=/lib \
     --includedir="/../_build/include"
-make -j${NUM_CPU}
 
+make -j${NUM_CPU}
 make DESTDIR="${INSTALLROOT}" install
+
+# Determine MUSL-LIBC's loader filename
 echo -e 'print-ldso:\n\t@echo $$(basename $(LDSO_PATHNAME))' >> Makefile
 LDSO=$(make -f Makefile print-ldso)
+
+# Rename libc.so to $LDSO and symlink back
 mv -f "${INSTALLROOT}/usr/lib/libc.so" "${INSTALLROOT}/lib/${LDSO}"
 ln -sf "../../lib/${LDSO}" "${INSTALLROOT}/usr/lib/libc.so"
 mkdir -p "${INSTALLROOT}/usr/bin"
 ln -sf "../../lib/${LDSO}" "${INSTALLROOT}/usr/bin/ldd"
 
-mkdir -p "${BUILDROOT}/bin" "${BUILDROOT}/etc"
+mkdir -p "${BUILDROOT}"/{bin,etc}
 
+# Create musl-libc specs file for GCC
 sh "${SRCROOT}/musl-${MUSL_VERS}/tools/musl-gcc.specs.sh" "${BUILDROOT}/include" "${INSTALLROOT}/usr/lib" "/lib/${LDSO}" > "${BUILDROOT}/etc/musl-gcc.specs"
 
+# Create musl-libc wrapper for GCC
 cat <<EOF > "${BUILDROOT}/bin/musl-gcc"
 #!/bin/sh
 exec "\${REALGCC:-gcc}" "\$@" -specs "${BUILDROOT}/etc/musl-gcc.specs"
@@ -69,25 +83,27 @@ PATH="${BUILDROOT}/bin":$PATH
 cd "${BUILDROOT}/bin"
 
 # TODO: Using binutils from the build host for now
-ln -s `which ar` musl-ar
-ln -s `which strip` musl-strip
+ln -s $(which ar) musl-ar
+ln -s $(which strip) musl-strip
 
 # TODO: Using linux-headers from the buildhost for now
 mkdir -p "${BUILDROOT}/include"
 cd "${BUILDROOT}/include"
-ln -s "${KHDR_BASE}/include/linux" linux
-ln -s "${KHDR_BASE}/include/mtd" mtd
-if [ -d "${KHDR_BASE}/include/asm" ]
+ln -s "${KERN_HDR}/linux" linux
+ln -s "${KERN_HDR}/mtd" mtd
+if [ -d "${KERN_HDR}/asm" ]
 then
-  ln -s "${KHDR_BASE}/include/asm" asm
+  ln -s "${KERN_HDR}/asm" asm
 else
-    ln -s "${KHDR_BASE}/include/asm-generic" asm
+    ln -s "${KERN_HDR}/asm-generic" asm
 fi
-ln -s "${KHDR_BASE}/include/asm-generic" asm-generic
+ln -s "${KERN_HDR}/asm-generic" asm-generic
 
-### Busybox (static) ###
+### Build Busybox (static) ###
+
 mkdir -p "${BASE}/initramfs/3rd_party/GPL/busybox"
 cd "${BASE}/initramfs/3rd_party/GPL/busybox"
+
 if [ ! -e "${BASE}/initramfs/3rd_party/GPL/busybox/busybox-${BUSYBOX_VERS}.tar.bz2" ]; then
     curl -O https://www.busybox.net/downloads/busybox-${BUSYBOX_VERS}.tar.bz2
 fi
@@ -107,9 +123,10 @@ sed -i -e "s/CONFIG_EXTRA_COMPAT=y/CONFIG_EXTRA_COMPAT=n/" \
 make V=1 -j${NUM_CPU}
 make install
 
-(cd ${INSTALLROOT} && ln -s bin/busybox init)
+(cd "${INSTALLROOT}" && ln -s bin/busybox init)
 
-### OpenRC ###
+### Build OpenRC ###
+
 mkdir -p "${BASE}/initramfs/3rd_party/MIT/openrc"
 cd "${BASE}/initramfs/3rd_party/MIT/openrc"
 if [ ! -e "${BASE}/initramfs/3rd_party/MIT/openrc/openrc-${OPENRC_VERS}.tar.gz" ]; then
@@ -119,9 +136,10 @@ fi
 tar -C "${SRCROOT}" -xf openrc-${OPENRC_VERS}.tar.gz
 cd "${SRCROOT}/openrc-${OPENRC_VERS}"
 
-for i in ${BASE}/initramfs/3rd_party/MIT/openrc/patches/*.patch; do
-    patch -p1 -i $i || return 1
+for i in "${BASE}"/initramfs/3rd_party/MIT/openrc/patches/*.patch; do
+    patch -p1 --input="${i}"
 done
+
 sed -i -e '/^sed/d' pkgconfig/Makefile
 
 make -j${NUM_CPU} install \
@@ -160,10 +178,12 @@ console::respawn:/sbin/getty 38400 /dev/console
 EOF
 
 # Create empty directories
-mkdir -p ${INSTALLROOT}/proc ${INSTALLROOT}/run ${INSTALLROOT}/dev ${INSTALLROOT}/tmp ${INSTALLROOT}/lib/modules
-touch ${INSTALLROOT}/etc/fstab ${INSTALLROOT}/etc/sysctl.conf
+mkdir -p "${INSTALLROOT}"/{proc,run,dev,tmp} "${INSTALLROOT}/lib/modules"
+touch "${INSTALLROOT}/etc/fstab" "${INSTALLROOT}/etc/sysctl.conf"
 
 # Cleanup
+
+## Remove static libaries
 find "${INSTALLROOT}/usr/lib" -name "*.a" -delete
 
 # For now disable keymap
