@@ -157,8 +157,12 @@ console::respawn:/sbin/getty 38400 /dev/console
 ::shutdown:/sbin/openrc shutdown
 EOF
 
+# Create empty directories
 mkdir -p ${INSTALLROOT}/proc ${INSTALLROOT}/run ${INSTALLROOT}/dev ${INSTALLROOT}/tmp ${INSTALLROOT}/lib/modules
 touch ${INSTALLROOT}/etc/fstab ${INSTALLROOT}/etc/sysctl.conf
+
+# Cleanup
+find ${INSTALLROOT}/usr/lib -name "*.a" -delete
 
 # Create root user
 echo 'root:x:0:0:root:/:/bin/sh' > ${INSTALLROOT}/etc/passwd
