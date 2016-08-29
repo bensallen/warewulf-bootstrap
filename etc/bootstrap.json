@@ -1,0 +1,59 @@
+{
+  "drivers": {
+    "kernel/drivers": [
+      "ata",
+      "auth_gss",
+      "block",
+      "cpufreq",
+      "dca",
+      "dcdbas.ko",
+      "dell_rbu.ko",
+      "dns_resolver",
+      "infiniband",
+      "md",
+      "message",
+      "net",
+      "scsi"
+    ],
+    "kernel/drivers/char/ipmi": [
+      "ipmi_devintf.ko",
+      "ipmi_msghandler.ko",
+      "ipmi_si.ko"
+    ],
+    "kernel/drivers/pci": [
+      "hotplug"
+    ],
+    "kernel/drivers/usb": [
+      "host"
+    ],
+    "kernel/fs": [
+      "ext4",
+      "fuse",
+      "lockd",
+      "nfs_common",
+      "nfs",
+      "nfsd"
+    ]
+  },
+  "firmware": [
+    "3com/*",
+    "acenic/*",
+    "bnx2*",
+    "cxgb3/*",
+    "e100/*",
+    "myricom/*",
+    "ti_*",
+    "tigon/*"
+  ],
+  "modprobe": [
+    "ehci-hcd",
+    "isp116x-hcd",
+    "isp1362-hcd",
+    "ohci-hcd",
+    "sd_mod",
+    "sl811-hcd",
+    "uhci-hcd",
+    "whci-hcd",
+    "xhci-hcd"
+  ]
+}
