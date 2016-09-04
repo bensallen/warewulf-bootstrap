@@ -178,7 +178,7 @@ console::respawn:/sbin/getty 38400 /dev/console
 EOF
 
 # Create empty directories
-mkdir -p "${INSTALLROOT}"/{proc,run,dev,tmp} "${INSTALLROOT}/lib/modules"
+mkdir -p "${INSTALLROOT}"/{proc,run,dev,tmp}
 touch "${INSTALLROOT}/etc/fstab" "${INSTALLROOT}/etc/sysctl.conf"
 
 # Cleanup
@@ -195,4 +195,4 @@ echo 'root::16793:0:99999:7:::' > "${INSTALLROOT}/etc/shadow"
 echo 'root:x:0:' > "${INSTALLROOT}/etc/group"
 
 # Create CPIO initramfs of installroot
-(cd "$INSTALLROOT"; find . | bsdcpio -R 0:0 -o -z --format newc > "$BASE/initramfs.gz")
+(cd "$INSTALLROOT"; find . | cpio -R 0:0 -ov --format newc > "$BASE/initramfs/initramfs")
