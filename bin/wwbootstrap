@@ -1,18 +1,31 @@
 #!/usr/bin/python
 
+import argparse
 import json
 import os
+import shutil
+import tempfile
 from sets import Set
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 
-conf_file = "../etc/bootstrap.json"
-modpath = "/lib/modules/3.10.0-327.4.4.el7.x86_64"
-debug = False
-cpio_cmd = ["bsdcpio", "-o", "--format", "newc", "-z"]
-cpio_out = "modules.gz"
+parser = argparse.ArgumentParser(description='Warewulf Bootstrap Generator',
+         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-with open(conf_file) as f:
+parser.add_argument('-d', '--debug', help='Enable debug output', default=False, action='store_true')
+parser.add_argument('-c', '--config', help='JSON configuration file', default='/etc/warewulf/bootstrap.json')
+parser.add_argument('-m', '--modpath', help='Path to kernel modules', default='/lib/modules/' + os.uname()[2])
+parser.add_argument('-b', '--base', help='Path to base CPIO', default='/usr/share/warewulf/bootstrap/base')
+parser.add_argument('-C', '--chroot', help='Path to chroot', default='/')
+args = parser.parse_args()
+
+with open(args.config) as f:
   conf = json.load(f)
+
+tmp_dir = tempfile.mkdtemp()
+tmp_cpio = os.path.join(tmp_dir, os.path.basename(args.base))
+shutil.copy(args.base, tmp_cpio)
+cpio_cmd = ["cpio", "-R",  "0:0", "-o", "--format", "newc", "-A", "-F", tmp_cpio]
+
 
 def find_ko(names, path):
   result = []
@@ -23,26 +36,52 @@ def find_ko(names, path):
       result.append(os.path.join(root, path))
   return result
 
-f = open(cpio_out, 'w')
-p = Popen(cpio_cmd, stdout=f, stdin=PIPE, stderr=PIPE)
 
+def parent_dirs(dirset, path):
+  paths = []
+  path_elements = path.split('/')
+  for i in range(2, len(path_elements)): 
+    p = '/'.join(path_elements[:i])
+    if p not in dirset:
+      dirset.add(p)
+      paths.append(p)
+  return dirset, paths
+
+
+def add(p, path):
+  if args.debug: 
+    print(path)
+  p.stdin.write(path + "\n")
+
+os.chdir(args.chroot)
+
+if args.debug: print " ".join(cpio_cmd)
+p = Popen(cpio_cmd, stdin=PIPE, stderr=PIPE)
+
+dirset = Set([])
 for path, driver in conf["drivers"].iteritems():
-  for ko_path in find_ko(driver, os.path.join(modpath, path)):
-    archive_path = ""
+    for ko_path in find_ko(driver, os.path.join('.' + args.modpath, path)):
+        dirset, ppaths = parent_dirs(dirset, ko_path)
+        for ppath in ppaths:
+            add(p, ppath)
+        archive_path = ""
     if ko_path.endswith('.ko'):
-      p.stdin.write(ko_path + "\n")
-      if debug:
-         print(ko_path)
+      add(p, ko_path)
     else:
       for root, dirs, files in os.walk(ko_path): 
         for file in files:
           archive_path = os.path.join(root, file)
-          p.stdin.write(archive_path + "\n")
-          if debug:
-            print(archive_path)
+          dirset, ppaths = parent_dirs(dirset, archive_path)
+          for ppath in ppaths:
+            add(p, ppath)
+          add(p, archive_path)
+
+add(p, '.' + args.modpath + '/modules.dep')
+add(p, '.' + args.modpath + '/modules.order')
+add(p, '.' + args.modpath + '/modules.builtin')
 
 p.stdin.close()
 p.wait()
-f.close()
-if debug:
-  print(p.stderr.read())
+
+if args.debug: 
+    print(p.stderr.read())

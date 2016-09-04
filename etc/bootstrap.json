@@ -27,6 +27,7 @@
       "host"
     ],
     "kernel/fs": [
+      "binfmt_misc.ko",
       "ext4",
       "fuse",
       "lockd",
