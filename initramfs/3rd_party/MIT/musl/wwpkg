@@ -7,15 +7,15 @@ set -o pipefail
 MUSL_VERS=1.1.15
 
 fetch() {
-  cd "${BASE}/initramfs/3rd_party/MIT/musl/src"
+  cd "${_3RDPARTY}/MIT/musl/src"
 
-  if [ ! -e "${BASE}/initramfs/3rd_party/MIT/musl/src/musl-${MUSL_VERS}.tar.gz" ]; then
+  if [ ! -e "${_3RDPARTY}/MIT/musl/src/musl-${MUSL_VERS}.tar.gz" ]; then
       curl -O https://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz
   fi
 }
 
 prepare() {
-  tar -C "${SRCROOT}" -xf "${BASE}/initramfs/3rd_party/MIT/musl/src/musl-${MUSL_VERS}.tar.gz"
+  tar -C "${SRCROOT}" -xf "${_3RDPARTY}/MIT/musl/src/musl-${MUSL_VERS}.tar.gz"
 }
 
 build() {

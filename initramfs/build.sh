@@ -8,18 +8,20 @@ NUM_CPU=$(nproc)
 
 BASE=$(dirname $(readlink -f $0))
 
+_3RDPARTY="${BASE}/3rd_party"
+
 # Temp directory for creating the initramfs
-INSTALLROOT="${BASE}/initramfs/_install"
+INSTALLROOT="${BASE}/_install"
 rm -rf "${INSTALLROOT}"
 mkdir -p "${INSTALLROOT}"
 
 # Temp directory for files needed only for the build process
-BUILDROOT="${BASE}/initramfs/_build"
+BUILDROOT="${BASE}/_build"
 rm -rf "${BUILDROOT}"
 mkdir -p "${BUILDROOT}"
 
 # Temp directory for source
-SRCROOT="${BASE}/initramfs/_src"
+SRCROOT="${BASE}/_src"
 rm -rf "${SRCROOT}"
 mkdir -p "${SRCROOT}"
 
@@ -32,9 +34,9 @@ PKGS=(
   )
 
 for PKG in ${PKGS[@]}; do
-  source "${BASE}/initramfs/3rd_party/${PKG}/wwpkg"
+  source "${_3RDPARTY}/${PKG}/wwpkg"
   fetch
-  (cd "${BASE}/initramfs/3rd_party/${PKG}" && sha512sum --quiet -c chksums)
+  (cd "${_3RDPARTY}/${PKG}" && sha512sum --quiet -c chksums)
   prepare
   build
   install
@@ -83,4 +85,4 @@ echo 'root::16793:0:99999:7:::' > "${INSTALLROOT}/etc/shadow"
 echo 'root:x:0:' > "${INSTALLROOT}/etc/group"
 
 # Create CPIO initramfs of installroot
-(cd "$INSTALLROOT"; find . | cpio -R 0:0 -ov --format newc > "$BASE/initramfs/initramfs")
+(cd "$INSTALLROOT"; find . | cpio -R 0:0 -ov --format newc > "$BASE/initramfs")
