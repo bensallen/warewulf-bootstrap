@@ -76,9 +76,10 @@ for path, driver in conf["drivers"].iteritems():
              add(p, ppath)
            add(p, archive_path)
 
+add(p, '.' + args.modpath + '/modules.alias')
+add(p, '.' + args.modpath + '/modules.builtin')
 add(p, '.' + args.modpath + '/modules.dep')
 add(p, '.' + args.modpath + '/modules.order')
-add(p, '.' + args.modpath + '/modules.builtin')
 
 p.stdin.close()
 p.wait()
