@@ -60,21 +60,21 @@ p = Popen(cpio_cmd, stdin=PIPE, stderr=PIPE)
 
 dirset = Set([])
 for path, driver in conf["drivers"].iteritems():
-    for ko_path in find_ko(driver, os.path.join('.' + args.modpath, path)):
-        dirset, ppaths = parent_dirs(dirset, ko_path)
-        for ppath in ppaths:
-            add(p, ppath)
-        archive_path = ""
-    if ko_path.endswith('.ko'):
-      add(p, ko_path)
-    else:
-      for root, dirs, files in os.walk(ko_path): 
-        for file in files:
-          archive_path = os.path.join(root, file)
-          dirset, ppaths = parent_dirs(dirset, archive_path)
-          for ppath in ppaths:
-            add(p, ppath)
-          add(p, archive_path)
+  for ko_path in find_ko(driver, os.path.join('.' + args.modpath, path)):
+     dirset, ppaths = parent_dirs(dirset, ko_path)
+     for ppath in ppaths:
+         add(p, ppath)
+     archive_path = ""
+     if ko_path.endswith('.ko'):
+       add(p, ko_path)
+     else:
+       for root, dirs, files in os.walk(ko_path): 
+         for file in files:
+           archive_path = os.path.join(root, file)
+           dirset, ppaths = parent_dirs(dirset, archive_path)
+           for ppath in ppaths:
+             add(p, ppath)
+           add(p, archive_path)
 
 add(p, '.' + args.modpath + '/modules.dep')
 add(p, '.' + args.modpath + '/modules.order')
