@@ -37,6 +37,7 @@ for PKG in ${PKGS[@]}; do
   prepare
   build
   install
+  unset -f fetch prepare build install
 done
 
 # systemd-nspawn needs os-release
