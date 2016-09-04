@@ -53,7 +53,7 @@ build() {
   make V=1 -j${NUM_CPU}
 }
 
-install {
+install() {
   make install
   (cd "${INSTALLROOT}" && ln -s bin/busybox init)
 }
