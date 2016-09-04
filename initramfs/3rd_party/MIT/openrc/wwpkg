@@ -42,4 +42,7 @@ install() {
     LOCAL_PREFIX=/usr/local \
     BRANDING=\"Warewulf/$(uname -s)\" \
     CC=musl-gcc
+
+  cp "${_3RDPARTY}/MIT/openrc/src/init.d/coldplug" "${INSTALLROOT}/etc/init.d/coldplug"
+  ln -s /etc/init.d/coldplug "${INSTALLROOT}/etc/runlevels/boot/coldplug"
 }

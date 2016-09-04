@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+
+description="Load modules based on modalias in sysfs"
+
+depend()
+{
+	use isapnp
+    before modules
+	keyword -docker -lxc -openvz -prefix -systemd-nspawn -vserver
+}
+
+start()
+{
+	# Should not fail if kernel do not have module
+	# support compiled in ...
+	[ ! -f /proc/modules ] && return 0
+
+	ebegin "Loading modules for coldplugged devices"
+    sort -u /sys/bus/*/devices/*/modalias 2>/dev/null \
+    | xargs modprobe -ab 2>/dev/null
+
+    # Always end successfully
+    eend 0
+    
+}
