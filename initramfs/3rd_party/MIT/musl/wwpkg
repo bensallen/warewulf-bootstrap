@@ -5,7 +5,6 @@ set -o nounset
 set -o pipefail
 
 MUSL_VERS=1.1.15
-SHA512="9e923572c0d6bad3dc2d2646d4b0699c10b477ce6300ac6c6224895192a90667f581ddf6eda2ab8c4c16f47bde4bccb03bb90478638d136d9df721430f4d0163  musl-1.1.15.tar.gz"
 
 fetch() {
   cd "${BASE}/initramfs/3rd_party/MIT/musl/src"
@@ -13,7 +12,6 @@ fetch() {
   if [ ! -e "${BASE}/initramfs/3rd_party/MIT/musl/src/musl-${MUSL_VERS}.tar.gz" ]; then
       curl -O https://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz
   fi
-  sha512sum -c - <<< $SHA512
 }
 
 prepare() {

@@ -5,14 +5,12 @@ set -o nounset
 set -o pipefail
 
 OPENRC_VERS=0.21.3
-SHA512="1c0683fa86ab9e32a1102fccfdd8f149f670f9f4bd96e0c84405f4132a400a0634d677ba43cdd2af6721b4472cfe5f5540d0af465e3dc8e8cb9c81546dc222d6  openrc-0.21.3.tar.gz"
 
 fetch() {
   cd "${BASE}/initramfs/3rd_party/MIT/openrc/src"
   if [ ! -e "${BASE}/initramfs/3rd_party/MIT/openrc/src/openrc-${OPENRC_VERS}.tar.gz" ]; then
       curl -L -o openrc-${OPENRC_VERS}.tar.gz https://github.com/OpenRC/openrc/archive/${OPENRC_VERS}.tar.gz
   fi
-  sha512sum -c - <<< $SHA512
 }
 
 prepare() {

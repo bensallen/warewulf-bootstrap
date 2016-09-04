@@ -5,7 +5,6 @@ set -o nounset
 set -o pipefail
 
 BUSYBOX_VERS=1.25.0
-SHA512="4122a457709a19f697547f1f84fb37da6ae85dd22afefcb49f551b2c6386838e07bfed0d7d58e70ee8199ae8fd35fd4397bf7d8b3bdd66f60aefb3153376efe4  busybox-1.25.0.tar.bz2"
 
 fetch() {
   cd "${BASE}/initramfs/3rd_party/GPL/busybox/src"
@@ -13,7 +12,6 @@ fetch() {
   if [ ! -e "${BASE}/initramfs/3rd_party/GPL/busybox/src/busybox-${BUSYBOX_VERS}.tar.bz2" ]; then
       curl -O https://www.busybox.net/downloads/busybox-${BUSYBOX_VERS}.tar.bz2
   fi
-  sha512sum -c - <<< $SHA512
 }
 
 prepare() {

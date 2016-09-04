@@ -34,6 +34,7 @@ PKGS=(
 for PKG in ${PKGS[@]}; do
   source "${BASE}/initramfs/3rd_party/${PKG}/wwpkg"
   fetch
+  (cd "${BASE}/initramfs/3rd_party/${PKG}" && sha512sum --quiet -c chksums)
   prepare
   build
   install
