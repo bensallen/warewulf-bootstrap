@@ -1,10 +1,9 @@
 general:
   artifacts:
     - stdout.log
-    - initramfs.gz
-dependencies:
-  pre:
-    - sudo apt-get update; sudo apt-get -y install bsdcpio
+    - initramfs/initramfs
+
 test:
   override:
-    - ./build.sh > stdout.log
+    - ./initramfs/build.sh > stdout.log
+    - ./bin/wwbootstrap -c etc/bootstrap.json -d -b initramfs/initramfs > stdout.log
