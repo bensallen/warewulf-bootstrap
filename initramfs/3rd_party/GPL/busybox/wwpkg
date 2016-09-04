@@ -1,0 +1,59 @@
+### Build Busybox (static) ###
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+BUSYBOX_VERS=1.25.0
+SHA512="4122a457709a19f697547f1f84fb37da6ae85dd22afefcb49f551b2c6386838e07bfed0d7d58e70ee8199ae8fd35fd4397bf7d8b3bdd66f60aefb3153376efe4  busybox-1.25.0.tar.bz2"
+
+fetch() {
+  cd "${BASE}/initramfs/3rd_party/GPL/busybox/src"
+
+  if [ ! -e "${BASE}/initramfs/3rd_party/GPL/busybox/src/busybox-${BUSYBOX_VERS}.tar.bz2" ]; then
+      curl -O https://www.busybox.net/downloads/busybox-${BUSYBOX_VERS}.tar.bz2
+  fi
+  sha512sum -c - <<< $SHA512
+}
+
+prepare() {
+
+  # Where to find linux-headers
+  KERN_HDR=/usr/include
+
+  # TODO: Using linux-headers from the buildhost for now
+  mkdir -p "${BUILDROOT}/include"
+  cd "${BUILDROOT}/include"
+  ln -s "${KERN_HDR}/linux" linux
+  ln -s "${KERN_HDR}/mtd" mtd
+  if [ -d "${KERN_HDR}/asm" ]
+  then
+    ln -s "${KERN_HDR}/asm" asm
+  else
+      ln -s "${KERN_HDR}/asm-generic" asm
+  fi
+  ln -s "${KERN_HDR}/asm-generic" asm-generic
+
+  tar -C "${SRCROOT}" -xf "${BASE}/initramfs/3rd_party/GPL/busybox/src/busybox-${BUSYBOX_VERS}.tar.bz2"
+
+  cd "${SRCROOT}/busybox-${BUSYBOX_VERS}"
+  cp "${BASE}/busybox.config" .config
+  sed -i -e "s/CONFIG_EXTRA_COMPAT=y/CONFIG_EXTRA_COMPAT=n/" \
+        -e "s/.*CONFIG_CROSS_COMPILER_PREFIX.*/CONFIG_CROSS_COMPILER_PREFIX=\"musl-\"/" \
+        -e "s|.*CONFIG_PREFIX.*|CONFIG_PREFIX=\"${INSTALLROOT}\"|" \
+        -e "s/.*CONFIG_PIE.*/\# CONFIG_PIE is not set/" \
+        -e "s/.*CONFIG_INSTALL_APPLET_DONT.*/\# CONFIG_INSTALL_APPLET_DONT is not set/" \
+        -e "s/.*CONFIG_STATIC.*/CONFIG_STATIC=y/" \
+        -e "s/.*CONFIG_INSTALL_APPLET_SYMLINKS.*/CONFIG_INSTALL_APPLET_SYMLINKS=y/" \
+        .config
+}
+
+build() {
+  cd "${SRCROOT}/busybox-${BUSYBOX_VERS}"
+  make V=1 -j${NUM_CPU}
+}
+
+install {
+  make install
+  (cd "${INSTALLROOT}" && ln -s bin/busybox init)
+}

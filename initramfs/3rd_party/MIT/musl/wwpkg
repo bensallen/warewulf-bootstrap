@@ -1,0 +1,72 @@
+### Build MUSL-C ###
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+MUSL_VERS=1.1.15
+SHA512="9e923572c0d6bad3dc2d2646d4b0699c10b477ce6300ac6c6224895192a90667f581ddf6eda2ab8c4c16f47bde4bccb03bb90478638d136d9df721430f4d0163  musl-1.1.15.tar.gz"
+
+fetch() {
+  cd "${BASE}/initramfs/3rd_party/MIT/musl/src"
+
+  if [ ! -e "${BASE}/initramfs/3rd_party/MIT/musl/src/musl-${MUSL_VERS}.tar.gz" ]; then
+      curl -O https://www.musl-libc.org/releases/musl-${MUSL_VERS}.tar.gz
+  fi
+  sha512sum -c - <<< $SHA512
+}
+
+prepare() {
+  tar -C "${SRCROOT}" -xf "${BASE}/initramfs/3rd_party/MIT/musl/src/musl-${MUSL_VERS}.tar.gz"
+}
+
+build() {
+
+  cd "${SRCROOT}/musl-${MUSL_VERS}"
+  ./configure \
+      --disable-wrapper \
+      --prefix=/usr \
+      --sysconfdir=/etc \
+      --localstatedir=/var \
+      --syslibdir=/lib \
+      --includedir="/../_build/include"
+
+  make -j${NUM_CPU}
+}
+
+install() {
+  cd "${SRCROOT}/musl-${MUSL_VERS}"
+
+  make DESTDIR="${INSTALLROOT}" install
+
+  # Determine MUSL-LIBC's loader filename
+  echo -e 'print-ldso:\n\t@echo $$(basename $(LDSO_PATHNAME))' >> Makefile
+  LDSO=$(make -f Makefile print-ldso)
+
+  # Rename libc.so to $LDSO and symlink back
+  mv -f "${INSTALLROOT}/usr/lib/libc.so" "${INSTALLROOT}/lib/${LDSO}"
+  ln -sf "../../lib/${LDSO}" "${INSTALLROOT}/usr/lib/libc.so"
+  mkdir -p "${INSTALLROOT}/usr/bin"
+  ln -sf "../../lib/${LDSO}" "${INSTALLROOT}/usr/bin/ldd"
+
+  mkdir -p "${BUILDROOT}"/{bin,etc}
+
+  # Create musl-libc specs file for GCC
+  sh "${SRCROOT}/musl-${MUSL_VERS}/tools/musl-gcc.specs.sh" "${BUILDROOT}/include" "${INSTALLROOT}/usr/lib" "/lib/${LDSO}" > "${BUILDROOT}/etc/musl-gcc.specs"
+
+  # Create musl-libc wrapper for GCC
+  cat <<EOF > "${BUILDROOT}/bin/musl-gcc"
+#!/bin/sh
+exec "\${REALGCC:-gcc}" "\$@" -specs "${BUILDROOT}/etc/musl-gcc.specs"
+EOF
+
+  chmod +x "${BUILDROOT}/bin/musl-gcc"
+
+  PATH="${BUILDROOT}/bin":$PATH
+
+  cd "${BUILDROOT}/bin"
+
+  # TODO: Using binutils from the build host for now
+  ln -s $(which ar) musl-ar
+  ln -s $(which strip) musl-strip
+}
