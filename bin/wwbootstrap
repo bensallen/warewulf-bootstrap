@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser(description='Warewulf Bootstrap Generator',
 parser.add_argument('-d', '--debug', help='Enable debug output', default=False, action='store_true')
 parser.add_argument('-c', '--config', help='JSON configuration file', default='/etc/warewulf/bootstrap.json')
 parser.add_argument('-m', '--modpath', help='Path to kernel modules', default='/lib/modules/' + os.uname()[2])
+parser.add_argument('-o', '--output', help='Path to output initramfs', default='/var/lib/warewulf/bootstrap')
 parser.add_argument('-b', '--base', help='Path to base CPIO', default='/usr/share/warewulf/bootstrap/base')
 parser.add_argument('-C', '--chroot', help='Path to chroot', default='/')
 args = parser.parse_args()
@@ -25,7 +26,7 @@ tmp_dir = tempfile.mkdtemp()
 tmp_cpio = os.path.join(tmp_dir, os.path.basename(args.base))
 shutil.copy(args.base, tmp_cpio)
 cpio_cmd = ["cpio", "-R",  "0:0", "-o", "--format", "newc", "-A", "-F", tmp_cpio]
-
+cwd = os.getcwd()
 
 def find_ko(names, path):
   result = []
@@ -85,4 +86,8 @@ p.stdin.close()
 p.wait()
 
 if args.debug: 
-    print(p.stderr.read())
+  print(p.stderr.read())
+
+os.chdir(cwd)
+shutil.copy(tmp_cpio, args.output)
+  
