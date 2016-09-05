@@ -1,0 +1,50 @@
+#!/sbin/openrc-run
+
+description="Parse /proc/cmdline for Warewulf network options"
+
+depend()
+{
+    before network
+    keyword -jail -prefix -vserver
+}
+
+start()
+{
+           ebegin "Parsing /proc/cmdline for Warewulf network options"
+    set -- $(cat /proc/cmdline)
+    for x in "$@"; do
+        case "$x" in
+            wwhwaddr=*)
+            WWHWADDR="${x#wwhwaddr=}"
+            ;;
+            wwipv4=*)
+            WWIPV4="${x#wwipv4=}"
+            ;;
+            wwipv6=*)
+            WWIPV6="${x#wwipv6=}"
+            ;;
+            wwdns=*)
+            WWDNS="${x#wwdns=}"
+            ;;
+            wwserver=*)
+            WWSERVER="${x#wwserver=}"
+            ;;
+        esac
+    done
+    for DEV in $(echo /sys/class/net/* | xargs -n1 /usr/bin/basename | grep -v lo); do
+        HWADDR=$(cat /sys/class/net/$DEV/address)
+        # Use GUID if IB
+        if [ ${#HWADDR} -eq 59 ]; then
+            HWADDR=$(expr substr $HWADDR 37 23)
+        fi
+        if [ $HWADDR == $WWHWADDR ]; then
+            IP=$(echo ${WWIPV4} | cut -f 2 -d,)
+            echo "ip_${DEV}=\"${IP}\"" >> /etc/conf.d/network
+            break
+        fi
+    done
+
+     # Always end successfully
+    eend 0
+
+}

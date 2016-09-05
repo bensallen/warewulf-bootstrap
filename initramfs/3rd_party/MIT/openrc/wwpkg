@@ -45,4 +45,6 @@ install() {
 
   cp "${_3RDPARTY}/MIT/openrc/src/init.d/coldplug" "${INSTALLROOT}/etc/init.d/coldplug"
   ln -s /etc/init.d/coldplug "${INSTALLROOT}/etc/runlevels/boot/coldplug"
+  cp "${_3RDPARTY}/MIT/openrc/src/init.d/cmdline-net" "${INSTALLROOT}/etc/init.d/cmdline-net"
+  ln -s /etc/init.d/cmdline-net "${INSTALLROOT}/etc/runlevels/boot/cmdline-net"
 }
