@@ -90,4 +90,4 @@ if args.debug:
 
 os.chdir(cwd)
 shutil.copy(tmp_cpio, args.output)
-  
+shutil.rmtree(tmp_dir)  
