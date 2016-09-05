@@ -36,14 +36,7 @@ prepare() {
 
   cd "${SRCROOT}/busybox-${BUSYBOX_VERS}"
   cp "${_3RDPARTY}/GPL/busybox/src/busybox.config" .config
-  sed -i -e "s/CONFIG_EXTRA_COMPAT=y/CONFIG_EXTRA_COMPAT=n/" \
-        -e "s/.*CONFIG_CROSS_COMPILER_PREFIX.*/CONFIG_CROSS_COMPILER_PREFIX=\"musl-\"/" \
-        -e "s|.*CONFIG_PREFIX.*|CONFIG_PREFIX=\"${INSTALLROOT}\"|" \
-        -e "s/.*CONFIG_PIE.*/\# CONFIG_PIE is not set/" \
-        -e "s/.*CONFIG_INSTALL_APPLET_DONT.*/\# CONFIG_INSTALL_APPLET_DONT is not set/" \
-        -e "s/.*CONFIG_STATIC.*/CONFIG_STATIC=y/" \
-        -e "s/.*CONFIG_INSTALL_APPLET_SYMLINKS.*/CONFIG_INSTALL_APPLET_SYMLINKS=y/" \
-        .config
+  sed -i -e "s|.*CONFIG_PREFIX.*|CONFIG_PREFIX=\"${INSTALLROOT}\"|" .config
 }
 
 build() {
