@@ -2,8 +2,9 @@ general:
   artifacts:
     - stdout.log
     - initramfs/initramfs
+    - initramfs/initramfs_wmods
 
 test:
   override:
     - ./initramfs/build.sh > stdout.log
-    - ./bin/wwbootstrap -c etc/bootstrap.json -d -b initramfs/initramfs > stdout.log
+    - ./bin/wwbootstrap -c etc/bootstrap.json -d -b initramfs/initramfs -o initramfs/initramfs_wmods > stdout.log
