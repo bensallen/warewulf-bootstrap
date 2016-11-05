@@ -6,5 +6,5 @@ general:
 
 test:
   override:
-    - ./initramfs/build.sh > stdout.log
-    - ./bin/wwbootstrap -c etc/bootstrap.json -d -b initramfs/initramfs -o initramfs/initramfs_wmods > stdout.log
+    - ./initramfs/build.sh >> stdout.log
+    - ./bin/wwbootstrap -c etc/bootstrap.json -d -b initramfs/initramfs -o initramfs/initramfs_wmods >> stdout.log
