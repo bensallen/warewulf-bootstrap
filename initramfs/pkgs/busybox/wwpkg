@@ -1,18 +1,10 @@
 ### Build Busybox (static) ###
 
-set -o errexit
-set -o nounset
-set -o pipefail
-
 BUSYBOX_VERS=1.25.0
-
-fetch() {
-  cd "${_3RDPARTY}/GPL/busybox/src"
-
-  if [ ! -e "${_3RDPARTY}/GPL/busybox/src/busybox-${BUSYBOX_VERS}.tar.bz2" ]; then
-      curl -O https://www.busybox.net/downloads/busybox-${BUSYBOX_VERS}.tar.bz2
-  fi
-}
+SOURCE="https://www.busybox.net/downloads/busybox-${BUSYBOX_VERS}.tar.bz2
+        ${_PKGS}/busybox/src/busybox.config"
+SHA512SUMS="4122a457709a19f697547f1f84fb37da6ae85dd22afefcb49f551b2c6386838e07bfed0d7d58e70ee8199ae8fd35fd4397bf7d8b3bdd66f60aefb3153376efe4  busybox-1.25.0.tar.bz2
+            433715f77a2e9a7a4d4bf773aa88e9b396cd2486cbce12ffc6640ac790b231e4ba597166d37558b3fbb8bc738c6c16bd4f3ae113cbcd52e1f7a8dd30aaa3adf9  busybox.config"
 
 prepare() {
 
@@ -32,10 +24,10 @@ prepare() {
   fi
   ln -s "${KERN_HDR}/asm-generic" asm-generic
 
-  tar -C "${SRCROOT}" -xf "${_3RDPARTY}/GPL/busybox/src/busybox-${BUSYBOX_VERS}.tar.bz2"
+  tar -C "${SRCROOT}" -xf "${SRCROOT}/busybox-${BUSYBOX_VERS}.tar.bz2"
 
   cd "${SRCROOT}/busybox-${BUSYBOX_VERS}"
-  cp "${_3RDPARTY}/GPL/busybox/src/busybox.config" .config
+  cp "${SRCROOT}/busybox.config" .config
   sed -i -e "s|.*CONFIG_PREFIX.*|CONFIG_PREFIX=\"${INSTALLROOT}\"|" .config
 }
 

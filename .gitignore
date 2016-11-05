@@ -1,4 +1,4 @@
-initramfs.gz
+initramfs/initramfs
 initramfs/_install
 initramfs/_build
 initramfs/_src

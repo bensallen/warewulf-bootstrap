@@ -8,7 +8,7 @@ NUM_CPU=$(nproc)
 
 BASE=$(dirname $(readlink -f $0))
 
-_3RDPARTY="${BASE}/3rd_party"
+_PKGS="${BASE}/pkgs"
 
 # Temp directory for creating the initramfs
 INSTALLROOT="${BASE}/_install"
@@ -28,19 +28,47 @@ mkdir -p "${SRCROOT}"
 PATH="${BUILDROOT}/bin":$PATH
 
 PKGS=(
-    'MIT/musl'
-    'GPL/busybox' 
-    'MIT/openrc'
+    'musl'
+    'busybox' 
+    'openrc'
   )
 
+error() {
+  echo "ERROR: $1"
+  exit 1
+}
+
+fetch() {
+  local source=""
+  for source in ${SOURCE}; do
+    IFS='/' read -r -a path <<< "${source}"
+    file="${path[-1]}"
+    if [[ -e "${_PKGS}/${PKG}/src/${file}" ]]; then
+        cp "${_PKGS}/${PKG}/src/${file}" "${SRCROOT}/${file}"
+    elif [[ ! -e "${SRCROOT}/${file}" ]]; then
+      if [[ "${path[0]}" == "http:" || "${path[0]}" == "https:" || "${path[0]}" == "ftp:" ]]; then
+        (cd "${SRCROOT}" && curl -O "${source}" || error "${source} download failed")
+      else
+        error "${source} not found"
+      fi
+    fi
+  done
+}
+
+checksha512() {
+  for sum in "${SHA512SUMS}"; do
+    (cd "${SRCROOT}" && echo "$sum" | sha512sum -c --quiet) || error "Checksum failed"
+  done
+}
+
 for PKG in ${PKGS[@]}; do
-  source "${_3RDPARTY}/${PKG}/wwpkg"
+  source "${_PKGS}/${PKG}/wwpkg"
   fetch
-  (cd "${_3RDPARTY}/${PKG}" && sha512sum --quiet -c chksums)
+  checksha512
   prepare
   build
   install
-  unset -f fetch prepare build install
+  unset -f prepare build install
 done
 
 # systemd-nspawn needs os-release
