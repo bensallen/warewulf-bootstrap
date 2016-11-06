@@ -10,7 +10,7 @@ depend()
 
 start()
 {
-           ebegin "Parsing /proc/cmdline for Warewulf network options"
+    ebegin "Parsing /proc/cmdline for Warewulf network options"
     set -- $(cat /proc/cmdline)
     for x in "$@"; do
         case "$x" in
@@ -31,6 +31,9 @@ start()
             ;;
         esac
     done
+    if [ -z $HWADDR ]; then
+      eend 0
+    fi
     for DEV in $(echo /sys/class/net/* | xargs -n1 /usr/bin/basename | grep -v lo); do
         HWADDR=$(cat /sys/class/net/$DEV/address)
         # Use GUID if IB
