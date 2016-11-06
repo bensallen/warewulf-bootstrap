@@ -47,7 +47,7 @@ fetch() {
         cp "${_PKGS}/${PKG}/src/${file}" "${SRCROOT}/${file}"
     elif [[ ! -e "${SRCROOT}/${file}" ]]; then
       if [[ "${path[0]}" == "http:" || "${path[0]}" == "https:" || "${path[0]}" == "ftp:" ]]; then
-        (cd "${SRCROOT}" && curl -O "${source}" || error "${source} download failed")
+        (cd "${SRCROOT}" && curl -L -O "${source}" || error "${source} download failed")
       else
         error "${source} not found"
       fi
