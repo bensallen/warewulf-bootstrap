@@ -36,16 +36,26 @@
       "nfsd"
     ]
   },
-  "firmware": [
-    "3com/*",
-    "acenic/*",
-    "bnx2*",
-    "cxgb3/*",
-    "e100/*",
-    "myricom/*",
-    "ti_*",
-    "tigon/*"
-  ],
+  "firmware": {
+    "/": [
+      "3com",
+      "acenic",
+      "bnx2",
+      "bnx2x",
+      "bnx2x-e1-4.8.53.0.fw",
+      "bnx2x-e1-5.2.13.0.fw",
+      "bnx2x-e1-5.2.7.0.fw",
+      "bnx2x-e1h-4.8.53.0.fw",
+      "bnx2x-e1h-5.2.13.0.fw",
+      "bnx2x-e1h-5.2.7.0.fw",
+      "cxgb3",
+      "e100",
+      "myricom",
+      "ti_3410.fw",
+      "ti_5052.fw",
+      "tigon"
+    ]
+  },
   "modprobe": [
     "ehci-hcd",
     "isp116x-hcd",

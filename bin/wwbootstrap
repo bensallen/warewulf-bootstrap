@@ -5,6 +5,8 @@ import json
 import os
 import shutil
 import tempfile
+import itertools
+
 from sets import Set
 from subprocess import Popen, PIPE
 
@@ -14,6 +16,7 @@ parser = argparse.ArgumentParser(description='Warewulf Bootstrap Generator',
 parser.add_argument('-d', '--debug', help='Enable debug output', default=False, action='store_true')
 parser.add_argument('-c', '--config', help='JSON configuration file', default='/etc/warewulf/bootstrap.json')
 parser.add_argument('-m', '--modpath', help='Path to kernel modules', default='/lib/modules/' + os.uname()[2])
+parser.add_argument('-f', '--fwpath', help='Path to firmware', default='/lib/firmware')
 parser.add_argument('-o', '--output', help='Path to output initramfs', default='/var/lib/warewulf/bootstrap')
 parser.add_argument('-b', '--base', help='Path to base CPIO', default='/usr/share/warewulf/bootstrap/base')
 parser.add_argument('-C', '--chroot', help='Path to chroot', default='/')
@@ -61,6 +64,8 @@ p = Popen(cpio_cmd, stdin=PIPE, stderr=PIPE)
 
 dirset = Set([])
 for path, driver in conf["drivers"].iteritems():
+  if path == "/":
+    path = ""
   for ko_path in find_ko(driver, os.path.join('.' + args.modpath, path)):
      dirset, ppaths = parent_dirs(dirset, ko_path)
      for ppath in ppaths:
@@ -70,6 +75,25 @@ for path, driver in conf["drivers"].iteritems():
        add(p, ko_path)
      else:
        for root, dirs, files in os.walk(ko_path): 
+         for file in files:
+           archive_path = os.path.join(root, file)
+           dirset, ppaths = parent_dirs(dirset, archive_path)
+           for ppath in ppaths:
+             add(p, ppath)
+           add(p, archive_path)
+
+for path, fw in conf["firmware"].iteritems():
+  if path == "/":
+    path = ""
+  for fw_path in find_ko(fw, os.path.join('.' + args.fwpath, path)):
+     dirset, ppaths = parent_dirs(dirset, fw_path)
+     for ppath in ppaths:
+         add(p, ppath)
+     archive_path = ""
+     if fw_path.endswith('.fw') or fw_path.endswith('.bin'):
+       add(p, fw_path)
+     else:
+       for root, dirs, files in os.walk(fw_path): 
          for file in files:
            archive_path = os.path.join(root, file)
            dirset, ppaths = parent_dirs(dirset, archive_path)
