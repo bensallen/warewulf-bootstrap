@@ -8,12 +8,12 @@ SOURCE="https://github.com/OpenRC/openrc/archive/${OPENRC_VERS}.tar.gz#/openrc-$
         0002-bootmisc-no-run-cleanup.patch
         0003-init.sh.Linux-no-uucp-group.patch"
 
-SHA512SUMS="1c0683fa86ab9e32a1102fccfdd8f149f670f9f4bd96e0c84405f4132a400a0634d677ba43cdd2af6721b4472cfe5f5540d0af465e3dc8e8cb9c81546dc222d6  openrc-0.21.3.tar.gz
-            75e19610d26e18861f98f70b8c4bd6a9572b7448b9fac3258eff62e8785592cbc4be6de3981e914b8a84a88f64a8acd0ea187b0401cd3daedd26699c1222cc22  coldplug
-            441796cad4b6390dae1794bb1203edc64c430e7fdb48a588ff0eb43656d421ca00a7d2acf120f2c6e5dcb06b9484ee3fb4d7cb358cc9f945809f6a4e97980aec  cmdline-net
-            1c01874aebab74c18c70c1869b074ce1069ac43637340097e4f16741bd6b4771bc9506b25482f10e2b597f73ad2ea57434acb61ed38fca72017aed96b13e45fa  0001-sysctl.Linux.in-fix-for-busybox-sysctl.patch
-            8e24d4d8883c987fada9a6c0a892bda1053903b2a5aae93e04945260f972b79bed8ad1355bd87c7e247604be58d9d1570907b98c6c853db326052e3d0aeddd4c  0002-bootmisc-no-run-cleanup.patch
-            3ddc287034ff7a324bb40d871fcdbe5899fef0cddd031802745fe68e4b208795bb07069c6d4ca162f0e35eeb6b77325370af58acc63aaee870c6cdf2131004bd  0003-init.sh.Linux-no-uucp-group.patch"
+SHA512SUM="1c0683fa86ab9e32a1102fccfdd8f149f670f9f4bd96e0c84405f4132a400a0634d677ba43cdd2af6721b4472cfe5f5540d0af465e3dc8e8cb9c81546dc222d6  openrc-0.21.3.tar.gz
+           75e19610d26e18861f98f70b8c4bd6a9572b7448b9fac3258eff62e8785592cbc4be6de3981e914b8a84a88f64a8acd0ea187b0401cd3daedd26699c1222cc22  coldplug
+           441796cad4b6390dae1794bb1203edc64c430e7fdb48a588ff0eb43656d421ca00a7d2acf120f2c6e5dcb06b9484ee3fb4d7cb358cc9f945809f6a4e97980aec  cmdline-net
+           1c01874aebab74c18c70c1869b074ce1069ac43637340097e4f16741bd6b4771bc9506b25482f10e2b597f73ad2ea57434acb61ed38fca72017aed96b13e45fa  0001-sysctl.Linux.in-fix-for-busybox-sysctl.patch
+           8e24d4d8883c987fada9a6c0a892bda1053903b2a5aae93e04945260f972b79bed8ad1355bd87c7e247604be58d9d1570907b98c6c853db326052e3d0aeddd4c  0002-bootmisc-no-run-cleanup.patch
+           3ddc287034ff7a324bb40d871fcdbe5899fef0cddd031802745fe68e4b208795bb07069c6d4ca162f0e35eeb6b77325370af58acc63aaee870c6cdf2131004bd  0003-init.sh.Linux-no-uucp-group.patch"
 
 prepare() {
 

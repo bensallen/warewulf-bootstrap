@@ -4,8 +4,13 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-NUM_CPU=$(nproc)
+PKGS=(
+    'musl'
+    'busybox' 
+    'openrc'
+  )
 
+NUM_CPU=$(nproc)
 BASE=$(dirname $(readlink -f $0))
 
 _PKGS="${BASE}/pkgs"
@@ -27,22 +32,17 @@ mkdir -p "${SRCROOT}"
 
 PATH="${BUILDROOT}/bin":$PATH
 
-PKGS=(
-    'musl'
-    'busybox' 
-    'openrc'
-  )
-
 error() {
-  echo "ERROR: $1"
+  echo "ERROR: $1" >&2
   exit 1
 }
 
 fetch() {
-  local source=""
+  local source
   for source in ${SOURCE}; do
+    local path
     IFS='/' read -r -a path <<< "${source}"
-    file="${path[-1]}"
+    local file="${path[-1]}"
     if [[ -e "${_PKGS}/${PKG}/src/${file}" ]]; then
         cp "${_PKGS}/${PKG}/src/${file}" "${SRCROOT}/${file}"
     elif [[ ! -e "${SRCROOT}/${file}" ]]; then
@@ -56,19 +56,21 @@ fetch() {
 }
 
 checksha512() {
-  for sum in "${SHA512SUMS}"; do
+  local sum
+  for sum in "${SHA512SUM}"; do
     (cd "${SRCROOT}" && echo "$sum" | sha512sum -c --quiet) || error "Checksum failed"
   done
 }
 
 for PKG in ${PKGS[@]}; do
-  source "${_PKGS}/${PKG}/wwpkg"
+  source "${_PKGS}/${PKG}/WWPKG"
   fetch
   checksha512
   prepare
   build
   install
   unset -f prepare build install
+  unset -v SOURCE SHA512SUM
 done
 
 # systemd-nspawn needs os-release
